@@ -81,8 +81,9 @@ const App = () => {
 		const { data, error } = await supabase
 			.from("users")
 			.delete()
-			.eq("id", clickedId)
 			.select()
+			.eq("id", clickedId)
+			
 		
 		if (error) {
 			setDeleteError("Delete incomplete!");
@@ -134,20 +135,22 @@ const App = () => {
 		const { data, error } = await supabase
 			.from("users")
 			.update({ name, job, age })
-			.eq("id", clickedEditId)
 			.select()
-
+			.eq("id", clickedEditId)
+			
 			if (error) {
 				console.log(error);
 				setEditError(error.message);
 				return;
 			}
-		
-		console.log(data);
-		setEditedNameInput("");
-		setEditedJobInput("");
-		setEditedAgeInput("");
-		setEditError(null);
+
+			if (data) {
+				console.log(data);
+				setEditedNameInput("");
+				setEditedJobInput("");
+				setEditedAgeInput("");
+				setEditError(null);
+			}
 	}
 
 
@@ -162,7 +165,7 @@ const App = () => {
 
 	useEffect(() => {
 		fetchUsers()
-	}, [handleAddButton, handleDeleteButton]);
+	}, [handleAddButton, handleDeleteButton, handleSubmitChangesButton]);
 
 
 	return (
