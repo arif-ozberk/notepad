@@ -93,7 +93,6 @@ const App = () => {
 
 		if (data) {
 			console.log(data);
-			setUsers(data);
 			setDeleteError(null);
 		}
 	}
