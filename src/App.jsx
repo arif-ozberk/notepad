@@ -19,6 +19,12 @@ const App = () => {
 	const [fetchError, setFetchError] = useState(null);
 	const [addError, setAddError] = useState(null);
 	const [deleteError, setDeleteError] = useState(null);
+	const [editError, setEditError] = useState(null);
+
+	const [editedNameInput, setEditedNameInput] = useState("");
+	const [editedJobInput, setEditedJobInput] = useState("");
+	const [editedAgeInput, setEditedAgeInput] = useState("");
+	const [clickedEditId, setClickedEditId] = useState("");
 
 
 	const fetchUsers = async () => {
@@ -39,7 +45,6 @@ const App = () => {
 
 
 	const handleAddButton = async (e) => {
-		e.preventDefault();
 
 		if (!nameInput || !jobInput || !ageInput) {
 			setAddError("Please fill all inputs");
@@ -52,7 +57,8 @@ const App = () => {
 
 		const { data, error } = await supabase
 			.from("users")
-			.insert([{ name, job, age }]);
+			.insert([{ name, job, age }])
+			.select()
 		
 			if (error) {
 				console.log(error);
@@ -75,7 +81,8 @@ const App = () => {
 		const { data, error } = await supabase
 			.from("users")
 			.delete()
-			.eq("id", clickedId);
+			.eq("id", clickedId)
+			.select()
 		
 		if (error) {
 			setDeleteError("Delete incomplete!");
@@ -84,9 +91,72 @@ const App = () => {
 		}
 
 		if (data) {
+			console.log(data)
 			setUsers(data);
 			setDeleteError(null);
 		}
+	}
+
+
+	const handleEditButton = async (clickedId) => {
+		const { data, error } = await supabase
+			.from("users")
+			.select()
+			.eq("id", clickedId)
+			.single()
+
+		if (error) {
+			console.log(error);
+			return
+		}
+
+		if (data) {
+			console.log(data);
+			setEditedNameInput(data.name);
+			setEditedJobInput(data.job);
+			setEditedAgeInput(data.age);
+			setClickedEditId(clickedId);
+		}
+	}
+
+
+	const handleSubmitChangesButton = async () => {
+
+		if (!editedNameInput || !editedJobInput || !editedAgeInput) {
+			setEditError("Please fill all the blanks before submit changes");
+			return;
+		}
+
+		const name = editedNameInput;
+		const job = editedJobInput;
+		const age = editedAgeInput;
+
+		const { data, error } = await supabase
+			.from("users")
+			.update({ name, job, age })
+			.eq("id", clickedEditId)
+			.select()
+
+			if (error) {
+				console.log(error);
+				setEditError(error.message);
+				return;
+			}
+		
+		console.log(data);
+		setEditedNameInput("");
+		setEditedJobInput("");
+		setEditedAgeInput("");
+		setEditError(null);
+	}
+
+
+	const handleDiscardChangesButton = () => {
+		setEditedNameInput("");
+		setEditedJobInput("");
+		setEditedAgeInput("");
+		setClickedEditId("");
+		setEditError(null);
 	}
 
 
@@ -97,6 +167,7 @@ const App = () => {
 
 	return (
 		<div className="container">
+			<h3 style={{ margin: "1rem 0" }}>Users</h3>
 			<div>
 				Name:
 				<input type="text" onChange={(e) => setNameInput(e.target.value)} value={nameInput} />
@@ -110,7 +181,7 @@ const App = () => {
 				<input type="text" onChange={(e) => setAgeInput(e.target.value)} value={ageInput} />
 			</div>
 			
-			<button onClick={handleAddButton}>Add New User</button>
+			<button style={{ margin: "0.5rem 0" }} onClick={handleAddButton}>Add New User</button>
 			<button onClick={() => console.log(users)}>Show List in Console</button>
 			<ul>
 				{fetchError && <p>{fetchError.message}</p>}
@@ -119,10 +190,28 @@ const App = () => {
 
 				{!fetchError && !addError && !deleteError && users && users.map((item) => (
 					<li key={item.id}>
-						<div>Name: {item.name} | Job: {item.job} | Age: {item.age}<button onClick={() => handleDeleteButton(item.id)}>X</button></div>
+						<div>
+							Name: {item.name} | Job: {item.job} | Age: {item.age}
+							<button onClick={() => handleDeleteButton(item.id)}>X</button>
+							<button onClick={() => handleEditButton(item.id)}>Edit</button>
+						</div>
 					</li>
 				))}
 			</ul>
+			<hr />
+			<h3 style={{ margin: "1rem 0" }}>Edit User {editedNameInput}</h3>
+			<div>
+				Name: <input type="text" value={editedNameInput} onChange={(e) => setEditedNameInput(e.target.value)} />
+			</div>
+			<div>
+				Job: <input type="text" value={editedJobInput} onChange={(e) => setEditedJobInput(e.target.value)} />
+			</div>
+			<div>
+				Age: <input type="text" value={editedAgeInput} onChange={(e) => setEditedAgeInput(e.target.value)} />
+			</div>
+			<button onClick={handleSubmitChangesButton}>Submit Changes</button>
+			<button onClick={handleDiscardChangesButton}>Discard Changes</button>
+			{editError && <p>{editError}</p>}
 		</div>
 	);
 }
