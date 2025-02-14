@@ -26,6 +26,8 @@ const App = () => {
 	const [editedAgeInput, setEditedAgeInput] = useState("");
 	const [clickedEditId, setClickedEditId] = useState("");
 
+	const [isEditing, setIsEditing] = useState(false);
+
 
 	const fetchUsers = async () => {
 		const { data, error } = await supabase
@@ -98,12 +100,29 @@ const App = () => {
 	}
 
 
+	const changeIsOccupied = async (id, occupiedState) => {
+
+		const isOccupied = occupiedState;
+
+		const { data, error } = await supabase
+			.from("users")
+			.update({ isOccupied })
+			.select()
+			.eq("id", id)
+	}
+
+
 	const handleEditButton = async (clickedId) => {
 		const { data, error } = await supabase
 			.from("users")
 			.select()
 			.eq("id", clickedId)
 			.single()
+
+		if (data.isOccupied) {
+			setEditError("Someone else is making changes to this user at the moment!");
+			return;
+		}
 
 		if (error) {
 			console.log(error);
@@ -112,10 +131,13 @@ const App = () => {
 
 		if (data) {
 			console.log(data);
+			changeIsOccupied(clickedId, true);
+			setIsEditing(true);
 			setEditedNameInput(data.name);
 			setEditedJobInput(data.job);
 			setEditedAgeInput(data.age);
 			setClickedEditId(clickedId);
+			setEditError(null);
 		}
 	}
 
@@ -145,6 +167,8 @@ const App = () => {
 
 			if (data) {
 				console.log(data);
+				changeIsOccupied(clickedEditId, false);
+				setIsEditing(false);
 				setEditedNameInput("");
 				setEditedJobInput("");
 				setEditedAgeInput("");
@@ -154,6 +178,8 @@ const App = () => {
 
 
 	const handleDiscardChangesButton = () => {
+		changeIsOccupied(clickedEditId, false);
+		setIsEditing(false);
 		setEditedNameInput("");
 		setEditedJobInput("");
 		setEditedAgeInput("");
@@ -212,7 +238,7 @@ const App = () => {
 				Age: <input type="text" value={editedAgeInput} onChange={(e) => setEditedAgeInput(e.target.value)} />
 			</div>
 			<button onClick={handleSubmitChangesButton}>Submit Changes</button>
-			<button onClick={handleDiscardChangesButton}>Discard Changes</button>
+			{isEditing && <button onClick={handleDiscardChangesButton}>Discard Changes</button>}
 			{editError && <p>{editError}</p>}
 		</div>
 	);
