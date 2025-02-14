@@ -33,6 +33,7 @@ const App = () => {
 		const { data, error } = await supabase
 			.from("users")
 			.select()
+			.order("id")
 		
 		if (error) {
 			setFetchError(error);
